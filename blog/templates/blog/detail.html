@@ -1,10 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-博客{{blog_id}}详情页
-</body>
-</html>
+{% extends 'blog/base.html' %}
+{% load static %}
+{% block title %}博客详细首页{% endblock %}
+
+{% block css %}
+<link href="{% static 'blog/css/github.css' %}" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-9">
+            <h1>{{entry.title}}</h1>
+            <p>
+                <strong>{{entry.author}}</strong>
+                &nbsp;&nbsp;&nbsp;{{entry.created_time|date:'Y年ｍ月d日'}}
+
+                &nbsp;&nbsp;&nbsp;分类:
+                {% for category in entry.category.all %}
+                    &nbsp;&nbsp;<a href="{% url 'blog:blog_category' category.id %}">{{category.name}}</a>
+                {% endfor %}
+
+                &nbsp;&nbsp;&nbsp;标签:
+                {% for tag in entry.tags.all %}
+                    &nbsp;&nbsp;<a href="{% url 'blog:blog_tag' tag.id %}">{{tag.name}}</a>
+                {% endfor %}
+
+                &nbsp;&nbsp;&nbsp;浏览量:
+                    &nbsp;&nbsp;{{entry.visiting}}
+
+            </p>
+
+                {% if entry.img %}
+                <div><img src="{{entry.img.url}}" alt="博客地址" wdth="50%"/></div>
+                {% endif %}
+                <p>
+                    {{entry.toc|safe}}
+                    {{entry.body|safe}}
+                </p>
+
+        </div>
+
+        <div class="col-md-3">
+            {% include 'blog/right_side_bar.html' %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}
