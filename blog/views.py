@@ -1,9 +1,11 @@
-from django.shortcuts import render,get_object_or_404
+from django.shortcuts import render,get_object_or_404,redirect
 from . import models
 import markdown
 import pygments
 from django.core.paginator import Paginator,EmptyPage,PageNotAnInteger
 from django.db.models import Q
+from django_comments.models import Comment
+from django_comments import models as comment_models
 # Create your views here.
 
 def make_paginator(objects, page, num=1):
@@ -142,8 +144,8 @@ def detail(request,blog_id):
     return render(request,'blog/detail.html',locals())
 
 def category(request,category_id):
-    c = models.Category.objects.get(id=category_id)
-    # c = get_object_or_404(models.Category, id=category_id)
+    # c = models.Category.objects.get(id=category_id)
+    c = get_object_or_404(models.Category, id=category_id)
     entries = models.Entry.objects.filter(category=c)
     page = request.GET.get('page', 1)
     entry_list, paginator = make_paginator(entries, page)
@@ -194,4 +196,38 @@ def page_not_found(request):
 
 def page_error(request):
     return render(request,'blog/500.html',locals())
+
+def detail(request,blog_id):
+    # entry = models.Entry.objects.get(id=blog_id)
+    entry = get_object_or_404(models.Entry,id=blog_id)
+
+    md = markdown.Markdown(extensions=[
+        'markdown.extensions.extra',
+        'markdown.extensions.codehilite',
+        'markdown.extensions.toc',
+    ])
+    entry.body = md.convert(entry.body)
+    entry.toc = md.toc
+    entry.increase_visiting()
+
+    comment_list = list()
+
+    def get_comment_list(comments):
+        for comment in comments:
+            comment_list.append(comment)
+            children = comment.child_comment.all()
+            if len(children) > 0:
+                get_comment_list(children)
+
+    top_comments = Comment.objects.filter(object_pk=blog_id, parent_comment=None,
+                                          content_type__app_label='blog').order_by('-submit_date')
+
+    get_comment_list(top_comments)
+    return render(request, 'blog/detail.html', locals())
+
+def reply(request, comment_id):
+    if not request.session.get('login', None) and not request.user.is_authenticated():
+        return redirect('/')
+    parent_comment = get_object_or_404(comment_models.Comment, id=comment_id)
+    return render(request, 'blog/reply.html', locals())
 
