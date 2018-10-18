@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render,get_object_or_404
 from . import models
 import markdown
 import pygments
@@ -131,7 +131,8 @@ def index(request):
     return render(request, 'blog/index.html', locals())
 
 def detail(request,blog_id):
-    entry = models.Entry.objects.get(id=blog_id)
+    # entry = models.Entry.objects.get(id=blog_id)
+    entry = get_object_or_404(models.Entry,id=blog_id)
     md = markdown.Markdown(extensions=['markdown.extensions.extra',
                                        'markdown.extensions.codehilite',
                                        'markdown.extensions.toc'])
@@ -184,4 +185,13 @@ def archives(request, year, month):
     page_data = pagination_data(paginator, page)
     return render(request, 'blog/index.html', locals())
 
+
+def permission_denied(request):
+    return render(request,'blog/403.html',locals())
+
+def page_not_found(request):
+    return render(request,'blog/404.html',locals())
+
+def page_error(request):
+    return render(request,'blog/500.html',locals())
 
